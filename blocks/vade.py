@@ -72,4 +72,4 @@ class VadeCNN(nn.Module):
         ), dim=1).mean()
         KLD_c = distributions.kl_divergence(distributions.Categorical(pc_given_z), distributions.Categorical(pi[None, :])).mean()
 
-        return BCE, KLD, 1e-4*KLD_c, torch.tensor(0).float()
+        return BCE, KLD, KLD_c, torch.tensor(0).float()
