@@ -22,7 +22,7 @@ args = {
     "pre_train_epochs": 50
 }
 ################
-print("Running with seed: "+str(torch.initial_seed()))
+print("Running with seed: " + str(torch.initial_seed()))
 
 DL, DS = get_mnist(data_dir='../data', batch_size=args["batch_size"])
 model = nn.DataParallel(VadeCNN(z_dim=args["z_dim"], h_dim=200, n_cls=10).cuda(), device_ids=range(1))
@@ -31,61 +31,22 @@ train_optimizer = Adam(model.parameters(), lr=2e-3)
 lr_scheduler = StepLR(train_optimizer, step_size=10, gamma=0.95)
 analyser = Analyser(model=model, DL=DL)
 
-# if args["debug"]:
-#     analyser.write_graph()
 
-# model.load_state_dict(
-#     torch.load(
-#         "/home/rayyan/workspace/phd/vdae_cnn/results/2020-02-06 20:41:14/model_dict_epoch140"
-#     )
-# )
-
-
-# def pre_train(save_vars=False):
-#     mse = nn.MSELoss()
-#     for x, y in DL:
-#         pre_train_optimizer.zero_grad()
-#         x = x.view((-1, 1, 28, 28)).cuda()
-#         mu, _ = model.module.encoder(x)
-#         x_hat = model.module.decoder(mu)
-#         L = 784 * F.binary_cross_entropy(x_hat, x, reduction='none').mean()
-#         # L = mse(x, x_hat)
-#         analyser.add_to_loss_variables({'L': L}, normalization_factor=len(DL))
-#         L.backward()
-#         pre_train_optimizer.step()
-#
-#         # if save_vars:
-#         #     analyser.add_to_intermediate_variables({"x": x, "y": y, 'mu': mu})
 def pre_train(save_vars=False):
-    mse = nn.MSELoss()
-    T_mu = T_x_hat = T_L = T_B = 0
-    tt = time.time()
+    # mse = nn.MSELoss()
     for x, y in DL:
         pre_train_optimizer.zero_grad()
-        t = time.time()
         x = x.view((-1, 1, 28, 28)).cuda()
-
         mu, _ = model.module.encoder(x)
-        T_mu += (time.time()-t)
-
-        t = time.time()
         x_hat = model.module.decoder(mu)
-        T_x_hat += (time.time()-t)
-
-        t = time.time()
         L = 784 * F.binary_cross_entropy(x_hat, x, reduction='none').mean()
         # L = mse(x, x_hat)
-        T_L += (time.time()-t)
-
-        t = time.time()
         analyser.add_to_loss_variables({'L': L}, normalization_factor=len(DL))
         L.backward()
         pre_train_optimizer.step()
-        T_B += (time.time()-t)
 
-        # if save_vars:
-        #     analyser.add_to_intermediate_variables({"x": x, "y": y, 'mu': mu})
-    analyser.add_to_loss_variables({'T_mu': T_mu, 'T_x_hat': T_x_hat, 'T_L': T_L, 'T_B': T_B, 'TT': (time.time()-tt)})
+        if save_vars:
+            analyser.add_to_intermediate_variables({"x": x, "y": y, 'mu': mu})
 
 
 def train(save_vars=False):
@@ -125,9 +86,6 @@ if not os.path.exists('./pretrain_model.pk'):
         end_time = time.time()
         print(analyser.update_str(epoch=epoch, epoch_time=(end_time - start_time)))
 
-    # Mu, _ = model.cpu().float().module.encoder(DS["X"].view((-1, 1, 28, 28)))
-    # gmm = GaussianMixture(n_components=10, covariance_type='diag')
-    # pre = gmm.fit_predict(Mu.detach().cpu().numpy())
     print('Acc={:.4f}%'.format(Analyser.cluster_acc(pre, DS["Y"].numpy())[0] * 100))
 
     model.module.initialize_gmm_params(gmm)
@@ -135,11 +93,6 @@ if not os.path.exists('./pretrain_model.pk'):
 else:
     model.load_state_dict(torch.load('./pretrain_model.pk'))
 
-# model.load_state_dict(
-#     torch.load(
-#         "/home/rayyan/workspace/phd/disentangled_clustering/vade/results/2020-02-06 20:41:14/model_dict_epoch140"
-#     )
-# )
 
 for epoch in range(args["train_epochs"]):
     start_time = time.time()
