@@ -44,6 +44,15 @@ class VadeCNN(nn.Module):
 
         x_hat = self.decoder(z)
         return x_hat, mu, logvar, z
+        
+    def encode(self, x):
+        mu, logvar = self.encoder(x)
+        z = self.reparam(mu, logvar)
+        return z, mu, logvar
+
+    def decode(self, x):
+        x_hat = self.decoder(z)
+        return x_hat
 
     def pc_given_z(self, z):
         std_c = torch.exp(self.logvar_c / 2)
