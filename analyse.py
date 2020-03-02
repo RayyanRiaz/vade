@@ -8,7 +8,7 @@ from scipy.optimize import linear_sum_assignment
 from tensorboardX import SummaryWriter
 from torchvision.utils import make_grid
 
-from blocks.vade import VadeCNN
+from models.vade_archs import Vade_mnist, Vade2D
 
 LOGS_DIR_TIMESTAMP = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 RESULTS_DIR = os.path.dirname(os.path.realpath(__file__)) + "/results/" + LOGS_DIR_TIMESTAMP + "/"
@@ -17,7 +17,7 @@ if not os.path.exists(RESULTS_DIR):
 
 
 class Analyser:
-    def __init__(self, model: VadeCNN, DL, debug=True):
+    def __init__(self, model: Vade2D, DL, z_dim, debug=True):
         self.model = model
         random.seed(0)
         self.debug = debug
@@ -25,7 +25,7 @@ class Analyser:
         self.intermediate_variables = {}
         self.DL = DL
         self.summary_writer = SummaryWriter(log_dir=RESULTS_DIR)
-        self.z_dim = self.model.module.decoder.decoder[0].in_features
+        self.z_dim = z_dim
 
     def add_to_loss_variables(self, losses, normalization_factor=1):
         self.losses.update({

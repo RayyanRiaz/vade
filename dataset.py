@@ -70,6 +70,29 @@ class CustomTensorDataset(Dataset):
     def __len__(self):
         return self.data_tensor.size(0)
 
+class Fullloaded_dataset(Dataset):
+    def __init__(self, data_tensor, transform=None):
+        #print("reached point 2")
+        (self.data_tensor,self.labels) = data_tensor
+        self.label = data_tensor
+        self.transform = transform
+        self.indices = range(len(self))
+        
+    def __getitem__(self, index1):
+
+        img1 = self.data_tensor[index1]
+        img1 = torch.from_numpy(img1).float()
+        label = self.labels[index1]
+        #label = torch.from_numpy(label).float()
+
+        if self.transform is not None:
+            img1 = self.transform(img1)
+        
+
+        return img1, label
+
+    def __len__(self):
+        return self.data_tensor.shape[0]
 
 def return_data(args):
     name = args.dataset
@@ -94,11 +117,16 @@ def return_data(args):
         train_kwargs = {'root':root, 'transform':transform}
         dset = CustomImageFolder
     elif name.lower() == 'dsprites':
+        #print("reached point one")
         root = os.path.join(dset_dir, 'dsprites-dataset/dsprites_ndarray_co1sh3sc6or40x32y32_64x64.npz')
         data = np.load(root, encoding='latin1')
-        data = torch.from_numpy(data['imgs']).unsqueeze(1).float()
-        train_kwargs = {'data_tensor':data}
-        dset = CustomTensorDataset
+        #print(data.shape)
+        imgs = np.expand_dims(data['imgs'], axis=1)
+        labels = data['latents_values'][:,1]
+        
+        #data = torch.from_numpy(data['imgs']).unsqueeze(1).float()
+        train_kwargs = {'data_tensor':(imgs,labels)}
+        dset = Fullloaded_dataset
     else:
         raise NotImplementedError
 
@@ -107,8 +135,8 @@ def return_data(args):
     train_loader = DataLoader(train_data,
                               batch_size=batch_size,
                               shuffle=True,
-                              num_workers=num_workers,
-                              pin_memory=True,
+                              #num_workers=num_workers,
+                              #pin_memory=True,
                               drop_last=True)
 
     data_loader = train_loader

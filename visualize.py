@@ -13,7 +13,7 @@ from blocks.vade import VadeCNN
 from dataloader import get_mnist
 from miscellaneous.args_parsing import args_parsing
 from dataset import return_data
-
+from miscellaneous import args_parsing
 class Visualizer(object):
     def __init__(self, args):
         self.data_loader = return_data(args)
