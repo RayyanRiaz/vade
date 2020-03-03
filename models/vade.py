@@ -69,15 +69,7 @@ class Vade(nn.Module):
         
         x_hat = self.decoder(z)
         return x_hat, mu, logvar, z
-        
-    def encode(self, x):
-        mu, logvar = self.encoder(x)
-        z = self.reparam(mu, logvar)
-        return z, mu, logvar
 
-    def decode(self, x):
-        x_hat = self.decoder(z)
-        return x_hat
     def generate(self, cluster):
         if cluster >=0 and clust < self.n_cls:
             mu = self.mu_c[cluster,:]
@@ -87,6 +79,7 @@ class Vade(nn.Module):
             return self.decoder(z)
         else:
             print("An out of scope or invalid number has been entered")
+
 
     def pc_given_z(self, z):
         std_c = torch.exp(self.logvar_c / 2)
@@ -116,6 +109,11 @@ class Vade(nn.Module):
         KLD_c = distributions.kl_divergence(distributions.Categorical(pc_given_z), distributions.Categorical(pi[None, :])).mean()
 
         return BCE, KLD, KLD_c, torch.tensor(0).float()
+    def kld_unit_guassians_per_cluster(self):
+        std_c = torch.exp(self.logvar_c / 2)
+        KLD = distributions.kl_divergence(distributions.Independent(distributions.Normal(self.mu_c,std_c),reinterpreted_batch_ndims=0),
+            distributions.Independent(distributions.Normal(torch.zeros_like(self.mu_c),torch.ones_like(std_c)),reinterpreted_batch_ndims=0))
+        return KLD
 
 def kaiming_init(m):
     if isinstance(m, (nn.Linear, nn.Conv2d)):
